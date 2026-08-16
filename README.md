@@ -16,6 +16,21 @@ npx github:OthmanAdi/patchbay
 
 Opens `http://127.0.0.1:41752`.
 
+![Global scope with all three personas active](docs/global.png)
+
+Switch to a folder scope and everything is read from that folder's own settings.
+`inherits global` means the folder sets nothing of its own.
+
+![A folder scope showing inherited state](docs/folder-scope.png)
+
+APPLY writes the files and the LCD reports each one.
+
+![Applying changes to a folder scope](docs/apply.png)
+
+`+ BROWSE FOLDER` opens the OS folder dialog.
+
+![Waiting for the folder dialog](docs/folder-picker.png)
+
 ## What it does
 
 - Reads the true state, not what you think you configured: plugin enablement, level
