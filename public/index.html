@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PATCHBAY</title>
+<link rel="icon" href="/favicon.ico" type="image/svg+xml">
 <style>
 :root{
   --panel:#3a3d42; --panel-hi:#55595f; --panel-lo:#24262a;
@@ -49,7 +50,9 @@ body{
 }
 .tab.on{background:linear-gradient(180deg,#22262a,#191c1f);color:var(--amber);
   box-shadow:0 2px 5px rgba(0,0,0,.6) inset;border-color:#0f1113}
-.tab.add{color:var(--dim)}
+.tab.add{color:var(--amber)}
+.tab .x{opacity:.45;padding-left:5px}
+.tab .x:hover{opacity:1;color:#e07a6a}
 
 .strips{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
 .strip{
@@ -131,8 +134,8 @@ input.path{flex:1;min-width:220px;padding:7px 10px;border-radius:5px;border:1px 
     </div>
     <div class="agents" id="agents"></div>
     <div class="scopes" style="margin:14px 0 0">
-      <input class="path" id="newpath" placeholder="C:\path\to\project   (add a folder scope)">
-      <div class="tab add" id="addbtn">+ ADD FOLDER</div>
+      <div class="tab add" id="browsebtn">&#43; BROWSE FOLDER</div>
+      <input class="path" id="newpath" placeholder="...or paste a path and press Enter">
     </div>
   </div>
 </div>
@@ -162,8 +165,12 @@ function render() {
   const sc = document.getElementById('scopes');
   sc.innerHTML = '';
   S.scopes.forEach(s => {
-    const t = el(`<div class="tab ${s.id===scope?'on':''}">${s.id==='global'?'GLOBAL':s.path}</div>`);
-    t.onclick = () => { scope = s.id; render(); };
+    const isG = s.id === 'global';
+    const t = el(`<div class="tab ${s.id===scope?'on':''}">${isG?'GLOBAL':s.path}${isG?'':' <span class="x">&times;</span>'}</div>`);
+    t.onclick = (e) => {
+      if (e.target.classList.contains('x')) { e.stopPropagation(); return removeScope(s.path); }
+      scope = s.id; render();
+    };
     sc.appendChild(t);
   });
 
@@ -238,14 +245,45 @@ document.getElementById('apply').onclick = async () => {
   lcd(r.log.join('\n'));
 };
 
-document.getElementById('addbtn').onclick = async () => {
-  const v = document.getElementById('newpath').value.trim();
-  if (!v) return;
-  const folders = S.scopes.filter(x => x.path).map(x => x.path).concat([v]);
-  await fetch('/api/folders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folders }) });
-  document.getElementById('newpath').value = '';
+async function setFolders(folders, msg) {
+  const r = await (await fetch('/api/folders', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folders })
+  })).json();
   await load();
-  lcd('SCOPE ADDED: ' + v);
+  if (r.rejected && r.rejected.length) {
+    lcd('REJECTED: ' + r.rejected.join(', ') +
+        '\nA scope must be an ABSOLUTE path to a folder that exists.\ne.g. C:\\Users\\you\\Documents  not  Documents');
+  } else lcd(msg);
+}
+
+async function removeScope(p) {
+  if (scope === p) scope = 'global';
+  delete pending[p];
+  await setFolders(S.scopes.filter(x => x.path && x.path !== p).map(x => x.path),
+    'SCOPE REMOVED: ' + p + '\n(only removed from this panel, its .claude/settings.local.json is untouched)');
+}
+
+const browse = document.getElementById('browsebtn');
+browse.onclick = async () => {
+  const label = browse.textContent;
+  browse.textContent = 'WAITING FOR DIALOG...';
+  lcd('Folder dialog is open. It may be behind this window.');
+  try {
+    const r = await (await fetch('/api/pick', { method: 'POST' })).json();
+    if (r.cancelled) lcd('CANCELLED.');
+    else { await load(); lcd('SCOPE ADDED: ' + r.picked); }
+  } catch (e) {
+    lcd('PICKER FAILED: ' + e + '\nPaste the path into the field instead.');
+  }
+  browse.textContent = label;
+};
+
+document.getElementById('newpath').onkeydown = async (e) => {
+  if (e.key !== 'Enter') return;
+  const v = e.target.value.trim();
+  if (!v) return;
+  e.target.value = '';
+  await setFolders(S.scopes.filter(x => x.path).map(x => x.path).concat([v]), 'SCOPE ADDED: ' + v);
 };
 
 load();

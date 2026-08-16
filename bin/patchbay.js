@@ -41,9 +41,22 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/state') {
       return send(res, 200, P.getState());
     }
+    if (req.method === 'GET' && url.pathname === '/favicon.ico') {
+      // toggle switch, drawn inline so the package stays file-light
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<rect width="32" height="32" rx="7" fill="#2b2e33"/>
+<rect x="4" y="10" width="24" height="12" rx="6" fill="#2c6b45"/>
+<circle cx="22" cy="16" r="4.5" fill="#e2e5ea"/></svg>`;
+      return send(res, 200, svg, 'image/svg+xml');
+    }
+    if (req.method === 'POST' && url.pathname === '/api/pick') {
+      const picked = P.pickFolder();
+      if (!picked) return send(res, 200, { cancelled: true });
+      return send(res, 200, Object.assign({ picked }, P.setFolders(P.getFolders().concat([picked]))));
+    }
     if (req.method === 'POST' && url.pathname === '/api/folders') {
       const body = await readBody(req);
-      return send(res, 200, { folders: P.setFolders(body.folders || []) });
+      return send(res, 200, P.setFolders(body.folders || []));
     }
     if (req.method === 'POST' && url.pathname === '/api/apply') {
       const body = await readBody(req);

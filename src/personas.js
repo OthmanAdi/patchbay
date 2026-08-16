@@ -95,15 +95,73 @@ function writeJson(file, obj) {
 
 // ---------------------------------------------------------------- folder list
 
+// A scope path MUST be absolute and MUST already exist. A relative path like
+// "Documents" would otherwise resolve against the server's cwd and silently
+// create a .claude/settings.local.json in a folder nobody meant to touch.
+function normalizeFolder(f) {
+  if (typeof f !== 'string') return null;
+  const t = f.trim().replace(/^["']+|["']+$/g, '');
+  if (!t || !path.isAbsolute(t)) return null;
+  try {
+    if (!fs.statSync(t).isDirectory()) return null;
+  } catch {
+    return null;
+  }
+  return path.resolve(t);
+}
+
 function getFolders() {
-  return readJson(FOLDERS_FILE, []);
+  return readJson(FOLDERS_FILE, []).map(normalizeFolder).filter(Boolean);
 }
 
 function setFolders(list) {
-  const clean = [...new Set(list.filter((f) => typeof f === 'string' && f.trim()))];
+  const rejected = [];
+  const clean = [];
+  for (const f of list || []) {
+    const n = normalizeFolder(f);
+    if (n) clean.push(n);
+    else if (typeof f === 'string' && f.trim()) rejected.push(f.trim());
+  }
+  const unique = [...new Set(clean)];
   fs.mkdirSync(PANEL_DIR, { recursive: true });
-  fs.writeFileSync(FOLDERS_FILE, JSON.stringify(clean, null, 2) + '\n');
-  return clean;
+  fs.writeFileSync(FOLDERS_FILE, JSON.stringify(unique, null, 2) + '\n');
+  return { folders: unique, rejected };
+}
+
+// ---------------------------------------------------------------- folder picker
+
+// Opens the OS folder dialog. Blocks until the user picks or cancels, so the
+// request that calls this stays open; the browser side shows a waiting state.
+function pickFolder() {
+  try {
+    if (process.platform === 'win32') {
+      // -STA is required for FolderBrowserDialog. The throwaway TopMost form is
+      // the owner, otherwise the dialog opens behind the browser window.
+      const ps = [
+        'Add-Type -AssemblyName System.Windows.Forms | Out-Null',
+        '$d = New-Object System.Windows.Forms.FolderBrowserDialog',
+        "$d.Description = 'Pick a project folder for Patchbay'",
+        '$d.ShowNewFolderButton = $false',
+        '$owner = New-Object System.Windows.Forms.Form -Property @{TopMost=$true;ShowInTaskbar=$false;Opacity=0}',
+        '$owner.Show(); $owner.Activate()',
+        'if ($d.ShowDialog($owner) -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $d.SelectedPath }',
+        '$owner.Close()',
+      ].join('; ');
+      const out = execFileSync('powershell', ['-STA', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', ps],
+        { encoding: 'utf8', timeout: 300000, windowsHide: true });
+      return out.trim() || null;
+    }
+    if (process.platform === 'darwin') {
+      const out = execFileSync('osascript', ['-e', 'POSIX path of (choose folder with prompt "Pick a project folder for Patchbay")'],
+        { encoding: 'utf8', timeout: 300000 });
+      return out.trim() || null;
+    }
+    const out = execFileSync('zenity', ['--file-selection', '--directory', '--title=Pick a project folder for Patchbay'],
+      { encoding: 'utf8', timeout: 300000 });
+    return out.trim() || null;
+  } catch {
+    return null; // cancelled, or no dialog available on this box
+  }
 }
 
 // ---------------------------------------------------------------- state reads
@@ -201,6 +259,11 @@ function getState() {
 
 function applyToScope(dir, changes) {
   const log = [];
+  if (dir) {
+    const n = normalizeFolder(dir);
+    if (!n) return [`REFUSED: "${dir}" is not an absolute path to an existing folder. Nothing written.`];
+    dir = n;
+  }
   const file = scopeSettingsPath(dir);
   const settings = readJson(file, {});
   settings.enabledPlugins = settings.enabledPlugins || {};
@@ -292,4 +355,4 @@ function apply(payload) {
   return log;
 }
 
-module.exports = { getState, apply, getFolders, setFolders, PERSONAS, CLAUDE_DIR };
+module.exports = { getState, apply, getFolders, setFolders, pickFolder, PERSONAS, CLAUDE_DIR };
