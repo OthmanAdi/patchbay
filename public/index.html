@@ -43,16 +43,18 @@ body{
 
 .scopes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;align-items:center}
 .tab{
+  display:inline-flex;align-items:center;gap:8px;
   padding:7px 13px;border-radius:5px;cursor:pointer;font-size:11px;letter-spacing:.06em;
   background:linear-gradient(180deg,#4b4f55,#33363b);border:1px solid #191b1e;color:#b9bec6;
-  box-shadow:0 1px 0 rgba(255,255,255,.13) inset,0 2px 3px rgba(0,0,0,.4);white-space:nowrap;
-  max-width:320px;overflow:hidden;text-overflow:ellipsis
+  box-shadow:0 1px 0 rgba(255,255,255,.13) inset,0 2px 3px rgba(0,0,0,.4);white-space:nowrap
 }
+/* the label truncates, the close button never does */
+.tab .lbl{overflow:hidden;text-overflow:ellipsis;max-width:230px}
 .tab.on{background:linear-gradient(180deg,#22262a,#191c1f);color:var(--amber);
   box-shadow:0 2px 5px rgba(0,0,0,.6) inset;border-color:#0f1113}
 .tab.add{color:var(--amber)}
-.tab .x{opacity:.45;padding-left:5px}
-.tab .x:hover{opacity:1;color:#e07a6a}
+.tab .x{flex:none;opacity:.5;font-size:14px;line-height:1;padding:0 2px;border-radius:3px}
+.tab .x:hover{opacity:1;color:#ff8f7a;background:rgba(255,255,255,.08)}
 
 .strips{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
 .strip{
@@ -166,7 +168,12 @@ function render() {
   sc.innerHTML = '';
   S.scopes.forEach(s => {
     const isG = s.id === 'global';
-    const t = el(`<div class="tab ${s.id===scope?'on':''}">${isG?'GLOBAL':s.path}${isG?'':' <span class="x">&times;</span>'}</div>`);
+    // show the tail of the path: the last two segments carry the meaning, the
+    // drive prefix does not, and the full path lives in the tooltip
+    const parts = isG ? [] : s.path.split(/[\\/]/).filter(Boolean);
+    const short = isG ? 'GLOBAL' : (parts.length > 2 ? '…\\' : '') + parts.slice(-2).join('\\');
+    const t = el(`<div class="tab ${s.id===scope?'on':''}" title="${isG?'':s.path}">
+      <span class="lbl">${short}</span>${isG?'':'<span class="x" title="remove this scope from the panel">&times;</span>'}</div>`);
     t.onclick = (e) => {
       if (e.target.classList.contains('x')) { e.stopPropagation(); return removeScope(s.path); }
       scope = s.id; render();
