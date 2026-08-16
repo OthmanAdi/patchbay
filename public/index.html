@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PATCHBAY</title>
+<style>
+:root{
+  --panel:#3a3d42; --panel-hi:#55595f; --panel-lo:#24262a;
+  --ink:#d9dce1; --dim:#8b9099; --led:#4ade80; --led-off:#5b2020;
+  --amber:#ffb454; --lcd:#0d1a12; --lcd-ink:#7dffa8; --screw:#1a1c1f;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;padding:40px 16px;min-height:100vh;
+  background:#141517 radial-gradient(ellipse at 50% -10%,#2b2e33 0%,#111214 70%);
+  font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink);
+  display:flex;justify-content:center;align-items:flex-start;
+}
+.rack{width:100%;max-width:1080px}
+.unit{
+  position:relative;border-radius:10px;padding:22px 26px 26px;
+  background:
+    repeating-linear-gradient(90deg,rgba(255,255,255,.028) 0 1px,transparent 1px 3px),
+    linear-gradient(180deg,var(--panel-hi) 0%,var(--panel) 18%,var(--panel) 82%,var(--panel-lo) 100%);
+  box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 -2px 0 rgba(0,0,0,.5) inset,0 24px 50px rgba(0,0,0,.6);
+  border:1px solid #16181b;
+}
+.unit+.unit{margin-top:18px}
+.screw{position:absolute;width:13px;height:13px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#7c8189,#3d4045 60%,#1b1d20);
+  box-shadow:0 1px 2px rgba(0,0,0,.6),0 0 0 1px #16181b inset}
+.screw::after{content:"";position:absolute;inset:5px 2px;background:var(--screw);border-radius:1px;transform:rotate(35deg)}
+.screw.tl{top:9px;left:9px}.screw.tr{top:9px;right:9px}.screw.bl{bottom:9px;left:9px}.screw.br{bottom:9px;right:9px}
+
+.brand{display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(0,0,0,.45);
+  padding-bottom:14px;margin-bottom:18px;box-shadow:0 1px 0 rgba(255,255,255,.07)}
+.brand h1{margin:0;font-size:22px;letter-spacing:.34em;
+  color:#e8ebef;text-shadow:0 1px 0 rgba(255,255,255,.22),0 -1px 1px rgba(0,0,0,.7)}
+.brand .model{color:var(--dim);letter-spacing:.16em;font-size:10px}
+.brand .spacer{flex:1}
+
+.scopes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;align-items:center}
+.tab{
+  padding:7px 13px;border-radius:5px;cursor:pointer;font-size:11px;letter-spacing:.06em;
+  background:linear-gradient(180deg,#4b4f55,#33363b);border:1px solid #191b1e;color:#b9bec6;
+  box-shadow:0 1px 0 rgba(255,255,255,.13) inset,0 2px 3px rgba(0,0,0,.4);white-space:nowrap;
+  max-width:320px;overflow:hidden;text-overflow:ellipsis
+}
+.tab.on{background:linear-gradient(180deg,#22262a,#191c1f);color:var(--amber);
+  box-shadow:0 2px 5px rgba(0,0,0,.6) inset;border-color:#0f1113}
+.tab.add{color:var(--dim)}
+
+.strips{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.strip{
+  border-radius:7px;padding:15px 14px 16px;background:linear-gradient(180deg,#303338,#25272b);
+  border:1px solid #17191c;box-shadow:0 1px 0 rgba(255,255,255,.09) inset,0 4px 10px rgba(0,0,0,.4)
+}
+.strip.dead{opacity:.4}
+.plate{display:flex;align-items:center;gap:9px;margin-bottom:4px}
+.led{width:11px;height:11px;border-radius:50%;background:var(--led-off);
+  box-shadow:0 0 0 1px #0d0f11 inset,0 1px 1px rgba(0,0,0,.6);flex:none;transition:.18s}
+.led.on{background:var(--led);box-shadow:0 0 0 1px #0d0f11 inset,0 0 9px var(--led),0 0 18px rgba(74,222,128,.5)}
+.led.pending{background:var(--amber);box-shadow:0 0 9px var(--amber);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.35}}
+.name{font-size:12px;letter-spacing:.13em;color:#e4e7ec}
+.blurb{color:var(--dim);font-size:10px;line-height:1.5;min-height:28px;margin:6px 0 12px}
+
+.row{display:flex;align-items:center;gap:12px}
+.sw{
+  width:44px;height:24px;border-radius:13px;cursor:pointer;flex:none;position:relative;
+  background:linear-gradient(180deg,#1b1d20,#2a2d31);box-shadow:0 2px 5px rgba(0,0,0,.7) inset;border:1px solid #15171a
+}
+.sw i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;transition:.16s;
+  background:radial-gradient(circle at 35% 30%,#e2e5ea,#9aa0a8 65%,#6e747c);box-shadow:0 2px 3px rgba(0,0,0,.6)}
+.sw.on{background:linear-gradient(180deg,#1d3d28,#2c6b45)}
+.sw.on i{left:22px}
+.state{font-size:10px;letter-spacing:.12em;color:var(--dim)}
+.state.on{color:var(--led)}
+
+.levels{display:flex;gap:4px;margin-top:13px}
+.lv{
+  flex:1;padding:6px 0;text-align:center;font-size:9.5px;letter-spacing:.09em;cursor:pointer;border-radius:4px;
+  background:linear-gradient(180deg,#3c4046,#2b2e33);border:1px solid #17191c;color:#8f959d;
+  box-shadow:0 1px 0 rgba(255,255,255,.1) inset
+}
+.lv.on{background:linear-gradient(180deg,#5c3f14,#7a5418);color:#ffcf87;border-color:#25190a;
+  box-shadow:0 0 8px rgba(255,180,84,.28),0 1px 0 rgba(255,255,255,.12) inset}
+.lv.dis{opacity:.3;cursor:not-allowed}
+.note{font-size:9px;color:var(--dim);margin-top:9px;letter-spacing:.04em}
+
+.foot{display:flex;gap:16px;align-items:stretch;margin-top:20px}
+.lcd{
+  flex:1;border-radius:5px;padding:11px 13px;min-height:82px;max-height:190px;overflow:auto;
+  background:linear-gradient(180deg,#0a150f,var(--lcd));border:1px solid #0a0c0d;
+  box-shadow:0 3px 9px rgba(0,0,0,.7) inset;color:var(--lcd-ink);font-size:11px;
+  text-shadow:0 0 6px rgba(125,255,168,.45);white-space:pre-wrap
+}
+.apply{
+  width:170px;border:none;border-radius:7px;cursor:pointer;font:inherit;font-size:13px;
+  letter-spacing:.2em;color:#fff5f5;background:linear-gradient(180deg,#c0392b,#8e2a1f);
+  box-shadow:0 1px 0 rgba(255,255,255,.28) inset,0 6px 0 #5e1c15,0 10px 16px rgba(0,0,0,.5);
+  transition:.07s
+}
+.apply:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 2px 0 #5e1c15}
+.apply:disabled{background:linear-gradient(180deg,#4a4d52,#393c41);color:#7d828a;
+  box-shadow:0 1px 0 rgba(255,255,255,.1) inset,0 6px 0 #26282b;cursor:default}
+.agents{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.chip{font-size:9.5px;letter-spacing:.1em;padding:4px 9px;border-radius:3px;
+  background:#25272b;border:1px solid #17191c;color:var(--dim)}
+.chip.ok{color:var(--led)}
+input.path{flex:1;min-width:220px;padding:7px 10px;border-radius:5px;border:1px solid #17191c;
+  background:#1b1d20;color:var(--ink);font:inherit;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.5) inset}
+</style>
+</head>
+<body>
+<div class="rack">
+  <div class="unit">
+    <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
+    <div class="brand">
+      <h1>PATCHBAY</h1>
+      <span class="model">PERSONA CONTROL UNIT &middot; MK I</span>
+      <span class="spacer"></span>
+      <span class="model" id="dir"></span>
+    </div>
+    <div class="scopes" id="scopes"></div>
+    <div class="strips" id="strips"></div>
+    <div class="foot">
+      <div class="lcd" id="lcd">READY.</div>
+      <button class="apply" id="apply" disabled>APPLY</button>
+    </div>
+    <div class="agents" id="agents"></div>
+    <div class="scopes" style="margin:14px 0 0">
+      <input class="path" id="newpath" placeholder="C:\path\to\project   (add a folder scope)">
+      <div class="tab add" id="addbtn">+ ADD FOLDER</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let S = null, scope = 'global', pending = {};
+
+const el = (h) => { const d = document.createElement('div'); d.innerHTML = h.trim(); return d.firstChild; };
+const lcd = (t) => { document.getElementById('lcd').textContent = t; };
+const dirty = () => Object.keys(pending).some(s => Object.keys(pending[s]||{}).length);
+
+async function load() {
+  S = await (await fetch('/api/state')).json();
+  document.getElementById('dir').textContent = S.claudeDir;
+  render();
+}
+
+function cur() { return S.scopes.find(s => s.id === scope) || S.scopes[0]; }
+function pend(id) { return (pending[scope] || {})[id] || {}; }
+function setPend(id, patch) {
+  pending[scope] = pending[scope] || {};
+  pending[scope][id] = Object.assign({}, pending[scope][id], patch);
+  render();
+}
+
+function render() {
+  const sc = document.getElementById('scopes');
+  sc.innerHTML = '';
+  S.scopes.forEach(s => {
+    const t = el(`<div class="tab ${s.id===scope?'on':''}">${s.id==='global'?'GLOBAL':s.path}</div>`);
+    t.onclick = () => { scope = s.id; render(); };
+    sc.appendChild(t);
+  });
+
+  const box = document.getElementById('strips');
+  box.innerHTML = '';
+  const s = cur();
+
+  S.personas.forEach(p => {
+    const st = s.personas[p.id];
+    const pd = pend(p.id);
+    const on = pd.enabled !== undefined ? pd.enabled : st.enabled;
+    const lvl = pd.level || (st.level && st.level.value);
+    const unsupported = !st.supported;
+    const missing = !st.installed;
+
+    const strip = el(`<div class="strip ${(unsupported||missing)?'dead':''}">
+      <div class="plate">
+        <div class="led ${pd.enabled!==undefined||pd.level?'pending':(on?'on':'')}"></div>
+        <div class="name">${p.label}</div>
+      </div>
+      <div class="blurb">${p.blurb}</div>
+      <div class="row">
+        <div class="sw ${on?'on':''}" data-sw></div>
+        <div class="state ${on?'on':''}">${on?'ACTIVE':'BYPASS'}</div>
+      </div>
+      <div class="levels" data-lv></div>
+      <div class="note"></div>
+    </div>`);
+
+    const sw = strip.querySelector('[data-sw]');
+    if (!unsupported && !missing) sw.onclick = () => setPend(p.id, { enabled: !on });
+
+    const lvbox = strip.querySelector('[data-lv]');
+    if (p.levels) {
+      p.levels.forEach(L => {
+        const canLevel = st.levelScoped && !unsupported && !missing;
+        const b = el(`<div class="lv ${lvl===L?'on':''} ${canLevel?'':'dis'}">${L.toUpperCase()}</div>`);
+        if (canLevel) b.onclick = () => setPend(p.id, { level: L });
+        lvbox.appendChild(b);
+      });
+    }
+
+    const notes = [];
+    if (missing) notes.push('not installed');
+    if (unsupported) notes.push('global only');
+    if (st.inherited) notes.push('inherits global');
+    if (p.levels && !st.levelScoped) notes.push('level is global only');
+    if (st.level && st.level.from) notes.push('level from ' + st.level.from);
+    if (p.id === 'headroom' && s.id === 'global') notes.push(st.proxy ? 'proxy up' : 'proxy down');
+    strip.querySelector('.note').textContent = notes.join(' · ');
+    box.appendChild(strip);
+  });
+
+  const ag = document.getElementById('agents');
+  ag.innerHTML = '';
+  Object.entries(S.agents).forEach(([n, v]) => {
+    ag.appendChild(el(`<div class="chip ${v.present&&v.wired?'ok':''}">${n.toUpperCase()} ${v.present?(v.wired?'WIRED':'DETECTED'):'ABSENT'}</div>`));
+  });
+
+  document.getElementById('apply').disabled = !dirty();
+}
+
+document.getElementById('apply').onclick = async () => {
+  lcd('WRITING...');
+  const r = await (await fetch('/api/apply', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ changes: pending })
+  })).json();
+  pending = {};
+  S = r.state;
+  render();
+  lcd(r.log.join('\n'));
+};
+
+document.getElementById('addbtn').onclick = async () => {
+  const v = document.getElementById('newpath').value.trim();
+  if (!v) return;
+  const folders = S.scopes.filter(x => x.path).map(x => x.path).concat([v]);
+  await fetch('/api/folders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folders }) });
+  document.getElementById('newpath').value = '';
+  await load();
+  lcd('SCOPE ADDED: ' + v);
+};
+
+load();
+</script>
+</body>
+</html>
