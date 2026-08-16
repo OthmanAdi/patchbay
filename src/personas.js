@@ -46,6 +46,16 @@ const PERSONAS = [
     flag: path.join(CLAUDE_DIR, '.ponytail-active'),
     globalConfig: userCfg('ponytail'),
     folderConfig: null, // ponytail has no repo-local config lookup
+    // SubagentStart re-injects the whole ruleset (~1.4k tokens) into EVERY
+    // Task-spawned subagent. This env var is an unanchored, case-insensitive
+    // regex matched against agent_type; unset means inject into all of them.
+    envKey: 'PONYTAIL_SUBAGENT_MATCHER',
+    envLabel: 'SUBAGENT INJECTION (~1.4k tok each)',
+    envPresets: [
+      { label: 'ALL', value: null, hint: 'every subagent pays it' },
+      { label: 'NONE', value: '^$', hint: 'no subagent pays it' },
+      { label: 'GENERAL', value: 'general', hint: 'general-purpose agents only' },
+    ],
   },
   {
     id: 'i-have-adhd',
@@ -221,6 +231,10 @@ function readScope(dir) {
       supported: !(dir && p.globalOnly),
       levelScoped: !dir || !!p.folderConfig,
     };
+    if (p.envKey && !dir) {
+      const env = readJson(SETTINGS, {}).env || {};
+      rec.env = Object.prototype.hasOwnProperty.call(env, p.envKey) ? env[p.envKey] : null;
+    }
     if (p.id === 'i-have-adhd' && !dir) rec.alwaysOn = fs.existsSync(p.flag);
     if (p.id === 'headroom' && !dir) {
       const env = readJson(SETTINGS, {}).env || {};
@@ -249,6 +263,7 @@ function getState() {
     personas: PERSONAS.map((p) => ({
       id: p.id, label: p.label, blurb: p.blurb, levels: p.levels,
       globalOnly: !!p.globalOnly, binary: !p.levels,
+      envKey: p.envKey || null, envLabel: p.envLabel || null, envPresets: p.envPresets || null,
     })),
     scopes: [readScope(null), ...folders.map((f) => readScope(f))],
     agents: detectAgents(),
@@ -286,6 +301,23 @@ function applyToScope(dir, changes) {
         if (change.enabled) { fs.mkdirSync(path.dirname(p.flag), { recursive: true }); fs.writeFileSync(p.flag, '1'); }
         else if (fs.existsSync(p.flag)) fs.unlinkSync(p.flag);
         log.push(`${p.label}: always-on flag ${change.enabled ? 'written' : 'removed'}`);
+      }
+    }
+
+    if (change.env !== undefined && p.envKey) {
+      if (dir) { log.push(`${p.label}: ${p.envKey} is global only, skipped for ${dir}`); }
+      else {
+        const s = readJson(SETTINGS, {});
+        s.env = s.env || {};
+        if (change.env === null || change.env === '') {
+          delete s.env[p.envKey];
+          log.push(`${p.label}: ${p.envKey} cleared (all subagents get the ruleset)`);
+        } else {
+          try { new RegExp(change.env); } catch { log.push(`${p.label}: "${change.env}" is not a valid regex, skipped`); continue; }
+          s.env[p.envKey] = change.env;
+          log.push(`${p.label}: ${p.envKey}=${change.env}`);
+        }
+        writeJson(SETTINGS, s);
       }
     }
 
