@@ -2,14 +2,37 @@
   "name": "patchbay",
   "version": "0.1.0",
   "description": "A studio rack for your coding agent's personality. Toggle caveman, ponytail, i-have-adhd and headroom per folder, see what is actually wired, apply in one click.",
-  "bin": { "patchbay": "bin/patchbay.js" },
+  "bin": {
+    "patchbay": "bin/patchbay.js"
+  },
   "type": "commonjs",
-  "engines": { "node": ">=18" },
-  "files": ["bin", "src", "public"],
-  "scripts": { "start": "node bin/patchbay.js" },
-  "keywords": ["claude-code", "agent", "plugins", "caveman", "ponytail", "adhd", "headroom", "config"],
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin",
+    "src",
+    "public"
+  ],
+  "scripts": {
+    "start": "node bin/patchbay.js",
+    "test": "node --test"
+  },
+  "keywords": [
+    "claude-code",
+    "agent",
+    "plugins",
+    "caveman",
+    "ponytail",
+    "adhd",
+    "headroom",
+    "config"
+  ],
   "license": "MIT",
   "author": "Ahmad-Othman Adi",
-  "repository": { "type": "git", "url": "git+https://github.com/OthmanAdi/patchbay.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OthmanAdi/patchbay.git"
+  },
   "dependencies": {}
 }
