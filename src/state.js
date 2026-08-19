@@ -108,10 +108,19 @@ function buildScope(folder, ctx) {
     };
 
     if (p.flagIsPresence) {
-      // presence of the flag is the real switch for this one
+      // This skill is disable-model-invocation, so enabling the plugin is not
+      // enough: without the global always-on flag nothing fires. Both must hold,
+      // in a folder scope too, since the flag itself is global.
       const on = fs.existsSync(p.flag);
       const en = resolveEnabled(folder, p.plugin);
-      rec.enabled = { value: en.value && (folder ? true : on), source: on ? en.source : 'flag', chain: en.chain };
+      rec.enabled = {
+        value: en.value && on,
+        source: !en.value ? en.source : (on ? en.source : 'flag missing'),
+        chain: en.chain.concat([{
+          kind: 'flag', file: p.flag, says: on ? 'present' : null, exists: on,
+          note: 'the skill is disable-model-invocation, so it only runs when this file exists',
+        }]),
+      };
       rec.alwaysOn = on;
     } else {
       rec.enabled = resolveEnabled(folder, p.plugin);

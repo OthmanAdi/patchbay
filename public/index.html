@@ -8,118 +8,157 @@
 <style>
 :root{
   --panel:#3a3d42; --panel-hi:#55595f; --panel-lo:#24262a;
-  --ink:#d9dce1; --dim:#8b9099; --led:#4ade80; --led-off:#5b2020;
-  --amber:#ffb454; --lcd:#0d1a12; --lcd-ink:#7dffa8; --screw:#1a1c1f;
+  --ink:#d9dce1; --dim:#8b9099; --faint:#6b7078;
+  --led:#4ade80; --led-off:#5b2020; --amber:#ffb454; --red:#e0614d;
+  --lcd:#0d1a12; --lcd-ink:#7dffa8; --screw:#1a1c1f; --line:rgba(0,0,0,.45);
 }
 *{box-sizing:border-box}
 body{
-  margin:0;padding:40px 16px;min-height:100vh;
+  margin:0;padding:34px 16px 60px;min-height:100vh;
   background:#141517 radial-gradient(ellipse at 50% -10%,#2b2e33 0%,#111214 70%);
-  font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink);
+  font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink);
   display:flex;justify-content:center;align-items:flex-start;
 }
-.rack{width:100%;max-width:1080px}
+.rack{width:100%;max-width:1180px}
 .unit{
-  position:relative;border-radius:10px;padding:22px 26px 26px;
+  position:relative;border-radius:10px;padding:22px 26px 24px;
   background:
     repeating-linear-gradient(90deg,rgba(255,255,255,.028) 0 1px,transparent 1px 3px),
     linear-gradient(180deg,var(--panel-hi) 0%,var(--panel) 18%,var(--panel) 82%,var(--panel-lo) 100%);
   box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 -2px 0 rgba(0,0,0,.5) inset,0 24px 50px rgba(0,0,0,.6);
   border:1px solid #16181b;
 }
-.unit+.unit{margin-top:18px}
 .screw{position:absolute;width:13px;height:13px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,#7c8189,#3d4045 60%,#1b1d20);
   box-shadow:0 1px 2px rgba(0,0,0,.6),0 0 0 1px #16181b inset}
 .screw::after{content:"";position:absolute;inset:5px 2px;background:var(--screw);border-radius:1px;transform:rotate(35deg)}
 .screw.tl{top:9px;left:9px}.screw.tr{top:9px;right:9px}.screw.bl{bottom:9px;left:9px}.screw.br{bottom:9px;right:9px}
 
-.brand{display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(0,0,0,.45);
-  padding-bottom:14px;margin-bottom:18px;box-shadow:0 1px 0 rgba(255,255,255,.07)}
-.brand h1{margin:0;font-size:22px;letter-spacing:.34em;
-  color:#e8ebef;text-shadow:0 1px 0 rgba(255,255,255,.22),0 -1px 1px rgba(0,0,0,.7)}
-.brand .model{color:var(--dim);letter-spacing:.16em;font-size:10px}
+/* ---------- header ---------- */
+.brand{display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--line);
+  padding-bottom:13px;margin-bottom:16px;box-shadow:0 1px 0 rgba(255,255,255,.07)}
+.brand h1{margin:0;font-size:21px;letter-spacing:.34em;color:#e8ebef;
+  text-shadow:0 1px 0 rgba(255,255,255,.22),0 -1px 1px rgba(0,0,0,.7)}
+.brand .model{color:var(--faint);letter-spacing:.16em;font-size:10px}
 .brand .spacer{flex:1}
+.live{display:flex;align-items:center;gap:7px;font-size:9.5px;letter-spacing:.14em;color:var(--dim);
+  padding:5px 10px;border-radius:4px;background:#22252a;border:1px solid #17191c;
+  box-shadow:0 2px 4px rgba(0,0,0,.45) inset}
+.live .dot{width:8px;height:8px;border-radius:50%;background:var(--led-off);transition:.2s}
+.live.on .dot{background:var(--led);box-shadow:0 0 8px var(--led)}
+.live.on{color:var(--led)}
+.live.off .dot{background:var(--red);box-shadow:0 0 8px var(--red);animation:blink 1s steps(2) infinite}
+.live.off{color:var(--red)}
+@keyframes blink{50%{opacity:.3}}
 
-.scopes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;align-items:center}
-.tab{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:7px 13px;border-radius:5px;cursor:pointer;font-size:11px;letter-spacing:.06em;
+/* ---------- scope tabs ---------- */
+.scopes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center}
+.tab{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:5px;cursor:pointer;
+  font-size:11px;letter-spacing:.05em;white-space:nowrap;
   background:linear-gradient(180deg,#4b4f55,#33363b);border:1px solid #191b1e;color:#b9bec6;
-  box-shadow:0 1px 0 rgba(255,255,255,.13) inset,0 2px 3px rgba(0,0,0,.4);white-space:nowrap
-}
-/* the label truncates, the close button never does */
+  box-shadow:0 1px 0 rgba(255,255,255,.13) inset,0 2px 3px rgba(0,0,0,.4)}
 .tab .lbl{overflow:hidden;text-overflow:ellipsis;max-width:230px}
-.tab.on{background:linear-gradient(180deg,#22262a,#191c1f);color:var(--amber);
-  box-shadow:0 2px 5px rgba(0,0,0,.6) inset;border-color:#0f1113}
-.tab.add{color:var(--amber)}
+.tab .pill{font-size:9px;padding:1px 6px;border-radius:9px;background:#20232700;
+  border:1px solid rgba(255,255,255,.16);color:var(--dim)}
+.tab.on{background:linear-gradient(180deg,#22262a,#191c1f);color:var(--amber);border-color:#0f1113;
+  box-shadow:0 2px 5px rgba(0,0,0,.6) inset}
+.tab.on .pill{border-color:rgba(255,180,84,.45);color:var(--amber)}
+.tab.dirty{border-color:var(--amber)}
 .tab .x{flex:none;opacity:.5;font-size:14px;line-height:1;padding:0 2px;border-radius:3px}
 .tab .x:hover{opacity:1;color:#ff8f7a;background:rgba(255,255,255,.08)}
+.tab.add{color:var(--amber)}
 
-.strips{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
-.strip{
-  border-radius:7px;padding:15px 14px 16px;background:linear-gradient(180deg,#303338,#25272b);
-  border:1px solid #17191c;box-shadow:0 1px 0 rgba(255,255,255,.09) inset,0 4px 10px rgba(0,0,0,.4)
-}
-.strip.dead{opacity:.4}
-.plate{display:flex;align-items:center;gap:9px;margin-bottom:4px}
-.led{width:11px;height:11px;border-radius:50%;background:var(--led-off);
-  box-shadow:0 0 0 1px #0d0f11 inset,0 1px 1px rgba(0,0,0,.6);flex:none;transition:.18s}
-.led.on{background:var(--led);box-shadow:0 0 0 1px #0d0f11 inset,0 0 9px var(--led),0 0 18px rgba(74,222,128,.5)}
+/* ---------- strips ---------- */
+.strips{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:13px}
+.strip{border-radius:7px;padding:14px 13px 15px;background:linear-gradient(180deg,#303338,#25272b);
+  border:1px solid #17191c;box-shadow:0 1px 0 rgba(255,255,255,.09) inset,0 4px 10px rgba(0,0,0,.4)}
+.strip.dead{opacity:.42}
+.plate{display:flex;align-items:center;gap:9px}
+.led{width:11px;height:11px;border-radius:50%;background:var(--led-off);flex:none;transition:.18s;
+  box-shadow:0 0 0 1px #0d0f11 inset,0 1px 1px rgba(0,0,0,.6)}
+.led.on{background:var(--led);box-shadow:0 0 0 1px #0d0f11 inset,0 0 9px var(--led)}
 .led.pending{background:var(--amber);box-shadow:0 0 9px var(--amber);animation:blink 1s steps(2) infinite}
-@keyframes blink{50%{opacity:.35}}
 .name{font-size:12px;letter-spacing:.13em;color:#e4e7ec}
-.blurb{color:var(--dim);font-size:10px;line-height:1.5;min-height:28px;margin:6px 0 12px}
-
+.why{margin-left:auto;font-size:8.5px;letter-spacing:.1em;color:var(--faint);cursor:pointer;
+  padding:2px 6px;border-radius:3px;border:1px solid transparent}
+.why:hover,.why.open{color:var(--amber);border-color:rgba(255,180,84,.35);background:rgba(255,180,84,.07)}
+.blurb{color:var(--dim);font-size:10px;line-height:1.5;min-height:28px;margin:6px 0 11px}
 .row{display:flex;align-items:center;gap:12px}
-.sw{
-  width:44px;height:24px;border-radius:13px;cursor:pointer;flex:none;position:relative;
-  background:linear-gradient(180deg,#1b1d20,#2a2d31);box-shadow:0 2px 5px rgba(0,0,0,.7) inset;border:1px solid #15171a
-}
+.sw{width:44px;height:24px;border-radius:13px;cursor:pointer;flex:none;position:relative;border:1px solid #15171a;
+  background:linear-gradient(180deg,#1b1d20,#2a2d31);box-shadow:0 2px 5px rgba(0,0,0,.7) inset}
 .sw i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;transition:.16s;
   background:radial-gradient(circle at 35% 30%,#e2e5ea,#9aa0a8 65%,#6e747c);box-shadow:0 2px 3px rgba(0,0,0,.6)}
 .sw.on{background:linear-gradient(180deg,#1d3d28,#2c6b45)}
 .sw.on i{left:22px}
 .state{font-size:10px;letter-spacing:.12em;color:var(--dim)}
 .state.on{color:var(--led)}
-
-.levels{display:flex;gap:4px;margin-top:13px}
-.lv{
-  flex:1;padding:6px 0;text-align:center;font-size:9.5px;letter-spacing:.09em;cursor:pointer;border-radius:4px;
+.src{margin-left:auto;font-size:8.5px;color:var(--faint);letter-spacing:.06em}
+.levels{display:flex;gap:4px;margin-top:12px}
+.lv{flex:1;padding:6px 0;text-align:center;font-size:9.5px;letter-spacing:.09em;cursor:pointer;border-radius:4px;
   background:linear-gradient(180deg,#3c4046,#2b2e33);border:1px solid #17191c;color:#8f959d;
-  box-shadow:0 1px 0 rgba(255,255,255,.1) inset
-}
+  box-shadow:0 1px 0 rgba(255,255,255,.1) inset}
 .lv.on{background:linear-gradient(180deg,#5c3f14,#7a5418);color:#ffcf87;border-color:#25190a;
   box-shadow:0 0 8px rgba(255,180,84,.28),0 1px 0 rgba(255,255,255,.12) inset}
 .lv.dis{opacity:.3;cursor:not-allowed}
-.note{font-size:9px;color:var(--dim);margin-top:9px;letter-spacing:.04em}
-.envlbl{font-size:8.5px;letter-spacing:.11em;color:var(--dim);margin:13px 0 5px;
-  border-top:1px solid rgba(0,0,0,.4);padding-top:10px;box-shadow:0 -1px 0 rgba(255,255,255,.05)}
+.note{font-size:9px;color:var(--faint);margin-top:8px;letter-spacing:.04em;line-height:1.5}
+.note .warn{color:var(--amber)}
+.envlbl{font-size:8.5px;letter-spacing:.11em;color:var(--dim);margin:12px 0 5px;
+  border-top:1px solid var(--line);padding-top:9px;box-shadow:0 -1px 0 rgba(255,255,255,.05)}
 .envin{width:100%;margin-top:5px;padding:5px 7px;border-radius:4px;border:1px solid #17191c;
-  background:#1b1d20;color:var(--ink);font:inherit;font-size:9.5px;
-  box-shadow:0 2px 4px rgba(0,0,0,.5) inset}
+  background:#1b1d20;color:var(--ink);font:inherit;font-size:9.5px;box-shadow:0 2px 4px rgba(0,0,0,.5) inset}
 
-.foot{display:flex;gap:16px;align-items:stretch;margin-top:20px}
-.lcd{
-  flex:1;border-radius:5px;padding:11px 13px;min-height:82px;max-height:190px;overflow:auto;
+/* ---------- why / precedence chain ---------- */
+.chain{margin-top:11px;border-top:1px solid var(--line);padding-top:10px;
+  box-shadow:0 -1px 0 rgba(255,255,255,.05)}
+.chain h4{margin:0 0 7px;font-size:8.5px;letter-spacing:.12em;color:var(--dim);font-weight:normal}
+.hop{display:flex;gap:7px;align-items:flex-start;font-size:9px;line-height:1.45;padding:3px 0;color:var(--faint)}
+.hop .kind{flex:none;width:52px;color:var(--dim);letter-spacing:.06em}
+.hop .val{flex:none;width:40px;text-align:right}
+.hop .fp{flex:1;word-break:break-all;opacity:.72}
+.hop.wins{color:var(--ink)}
+.hop.wins .val{color:var(--led)}
+.hop.wins .kind{color:var(--amber)}
+.hop.none .val{color:#5f646b}
+.hop.bad .val{color:var(--red)}
+
+/* ---------- footer ---------- */
+.foot{display:flex;gap:15px;align-items:stretch;margin-top:18px}
+.console{flex:1;border-radius:5px;padding:9px 11px;height:150px;overflow:auto;
   background:linear-gradient(180deg,#0a150f,var(--lcd));border:1px solid #0a0c0d;
-  box-shadow:0 3px 9px rgba(0,0,0,.7) inset;color:var(--lcd-ink);font-size:11px;
-  text-shadow:0 0 6px rgba(125,255,168,.45);white-space:pre-wrap
-}
-.apply{
-  width:170px;border:none;border-radius:7px;cursor:pointer;font:inherit;font-size:13px;
-  letter-spacing:.2em;color:#fff5f5;background:linear-gradient(180deg,#c0392b,#8e2a1f);
-  box-shadow:0 1px 0 rgba(255,255,255,.28) inset,0 6px 0 #5e1c15,0 10px 16px rgba(0,0,0,.5);
-  transition:.07s
-}
+  box-shadow:0 3px 9px rgba(0,0,0,.7) inset;color:var(--lcd-ink);font-size:10.5px;
+  text-shadow:0 0 6px rgba(125,255,168,.4)}
+.ln{display:flex;gap:8px;padding:1px 0}
+.ln .t{color:#3f7a56;flex:none}
+.ln .m{white-space:pre-wrap;word-break:break-word}
+.ln.warn .m{color:#ffcf87;text-shadow:0 0 6px rgba(255,180,84,.35)}
+.ln.error .m{color:#ff9c8a;text-shadow:0 0 6px rgba(224,97,77,.4)}
+.ln.info .m{color:#7fd6ff;text-shadow:0 0 6px rgba(127,214,255,.3)}
+.btns{display:flex;flex-direction:column;gap:9px;width:172px}
+.apply{flex:1;border:none;border-radius:7px;cursor:pointer;font:inherit;font-size:13px;letter-spacing:.2em;
+  color:#fff5f5;background:linear-gradient(180deg,#c0392b,#8e2a1f);transition:.07s;
+  box-shadow:0 1px 0 rgba(255,255,255,.28) inset,0 6px 0 #5e1c15,0 10px 16px rgba(0,0,0,.5)}
 .apply:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 2px 0 #5e1c15}
-.apply:disabled{background:linear-gradient(180deg,#4a4d52,#393c41);color:#7d828a;
-  box-shadow:0 1px 0 rgba(255,255,255,.1) inset,0 6px 0 #26282b;cursor:default}
-.agents{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
-.chip{font-size:9.5px;letter-spacing:.1em;padding:4px 9px;border-radius:3px;
-  background:#25272b;border:1px solid #17191c;color:var(--dim)}
+.apply:disabled{background:linear-gradient(180deg,#4a4d52,#393c41);color:#7d828a;cursor:default;
+  box-shadow:0 1px 0 rgba(255,255,255,.1) inset,0 6px 0 #26282b}
+.revert{border:1px solid #17191c;border-radius:5px;cursor:pointer;font:inherit;font-size:10px;letter-spacing:.14em;
+  padding:8px 0;color:var(--dim);background:linear-gradient(180deg,#3c4046,#2b2e33)}
+.revert:disabled{opacity:.35;cursor:default}
+.revert:not(:disabled):hover{color:var(--amber)}
+
+/* ---------- diff ---------- */
+.diff{margin-top:15px;border-radius:6px;border:1px solid #17191c;background:#1b1d20;
+  box-shadow:0 3px 9px rgba(0,0,0,.5) inset;padding:11px 13px}
+.diff h3{margin:0 0 9px;font-size:9px;letter-spacing:.14em;color:var(--amber);font-weight:normal}
+.dfile{margin-bottom:9px}
+.dfile .fp{font-size:9px;color:var(--dim);word-break:break-all;margin-bottom:4px}
+.dlines{font-size:9.5px;line-height:1.5;max-height:150px;overflow:auto;border-left:2px solid #2b2e33;padding-left:9px}
+.dl.add{color:#8ee6a8}
+.dl.del{color:#ff9c8a}
+.agents{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chip{font-size:9.5px;letter-spacing:.1em;padding:4px 9px;border-radius:3px;background:#25272b;
+  border:1px solid #17191c;color:var(--faint)}
 .chip.ok{color:var(--led)}
-input.path{flex:1;min-width:220px;padding:7px 10px;border-radius:5px;border:1px solid #17191c;
+input.path{flex:1;min-width:200px;padding:7px 10px;border-radius:5px;border:1px solid #17191c;
   background:#1b1d20;color:var(--ink);font:inherit;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.5) inset}
 </style>
 </head>
@@ -127,187 +166,333 @@ input.path{flex:1;min-width:220px;padding:7px 10px;border-radius:5px;border:1px 
 <div class="rack">
   <div class="unit">
     <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
+
     <div class="brand">
       <h1>PATCHBAY</h1>
-      <span class="model">PERSONA CONTROL UNIT &middot; MK I</span>
+      <span class="model">PERSONA CONTROL UNIT &middot; MK II</span>
       <span class="spacer"></span>
       <span class="model" id="dir"></span>
+      <div class="live off" id="live"><span class="dot"></span><span id="livetxt">CONNECTING</span></div>
     </div>
+
     <div class="scopes" id="scopes"></div>
     <div class="strips" id="strips"></div>
+    <div class="diff" id="diff" style="display:none"></div>
+
     <div class="foot">
-      <div class="lcd" id="lcd">READY.</div>
-      <button class="apply" id="apply" disabled>APPLY</button>
+      <div class="console" id="console"></div>
+      <div class="btns">
+        <button class="apply" id="apply" disabled>APPLY</button>
+        <button class="revert" id="revert" disabled>REVERT</button>
+      </div>
     </div>
+
     <div class="agents" id="agents"></div>
-    <div class="scopes" style="margin:14px 0 0">
+    <div class="scopes" style="margin:13px 0 0">
       <div class="tab add" id="browsebtn">&#43; BROWSE FOLDER</div>
-      <input class="path" id="newpath" placeholder="...or paste a path and press Enter">
+      <div class="tab add" id="discoverbtn">&#9678; DISCOVER</div>
+      <input class="path" id="newpath" placeholder="...or paste an absolute path and press Enter">
     </div>
   </div>
 </div>
 
 <script>
-let S = null, scope = 'global', pending = {};
+'use strict';
+let S = null, scope = 'global', pending = {}, openWhy = null, es = null;
 
 const el = (h) => { const d = document.createElement('div'); d.innerHTML = h.trim(); return d.firstChild; };
-const lcd = (t) => { document.getElementById('lcd').textContent = t; };
-const dirty = () => Object.keys(pending).some(s => Object.keys(pending[s]||{}).length);
+const dirty = () => Object.values(pending).some((s) => Object.keys(s || {}).length);
+const pend = (id) => (pending[scope] || {})[id] || {};
 
-async function load() {
-  S = await (await fetch('/api/state')).json();
-  document.getElementById('dir').textContent = S.claudeDir;
-  render();
+function log(msg, level) {
+  const c = document.getElementById('console');
+  const t = new Date().toTimeString().slice(0, 8);
+  const line = el('<div class="ln ' + (level || 'ok') + '"><span class="t">' + t + '</span><span class="m"></span></div>');
+  line.querySelector('.m').textContent = msg;
+  c.appendChild(line);
+  while (c.children.length > 400) c.removeChild(c.firstChild);
+  c.scrollTop = c.scrollHeight;
 }
 
-function cur() { return S.scopes.find(s => s.id === scope) || S.scopes[0]; }
-function pend(id) { return (pending[scope] || {})[id] || {}; }
 function setPend(id, patch) {
   pending[scope] = pending[scope] || {};
   pending[scope][id] = Object.assign({}, pending[scope][id], patch);
   render();
+  refreshDiff();
 }
 
-function render() {
+function clearPending() {
+  pending = {};
+  document.getElementById('diff').style.display = 'none';
+  render();
+}
+
+/* ---------------- live link ---------------- */
+function setLive(on, text) {
+  const n = document.getElementById('live');
+  n.className = 'live ' + (on ? 'on' : 'off');
+  document.getElementById('livetxt').textContent = text;
+}
+
+function connect() {
+  if (es) try { es.close(); } catch (e) {}
+  es = new EventSource('/api/stream');
+  es.addEventListener('open', () => setLive(true, 'LIVE'));
+  es.addEventListener('state', (ev) => {
+    const d = JSON.parse(ev.data);
+    S = d.state;
+    setLive(true, 'LIVE');
+    if (d.reason && d.reason !== 'hello') log('sync: ' + d.reason, 'info');
+    (S.warnings || []).forEach((w) => log(w, 'error'));
+    render();
+  });
+  es.addEventListener('log', (ev) => { const d = JSON.parse(ev.data); log(d.msg, d.level); });
+  es.addEventListener('error', () => setLive(false, 'RECONNECTING'));
+}
+
+/* ---------------- render ---------------- */
+function cur() { return (S.scopes || []).find((s) => s.id === scope) || S.scopes[0]; }
+
+function renderScopes() {
   const sc = document.getElementById('scopes');
   sc.innerHTML = '';
-  S.scopes.forEach(s => {
+  S.scopes.forEach((s) => {
     const isG = s.id === 'global';
-    // show the tail of the path: the last two segments carry the meaning, the
-    // drive prefix does not, and the full path lives in the tooltip
     const parts = isG ? [] : s.path.split(/[\\/]/).filter(Boolean);
     const short = isG ? 'GLOBAL' : (parts.length > 2 ? '…\\' : '') + parts.slice(-2).join('\\');
-    const t = el(`<div class="tab ${s.id===scope?'on':''}" title="${isG?'':s.path}">
-      <span class="lbl">${short}</span>${isG?'':'<span class="x" title="remove this scope from the panel">&times;</span>'}</div>`);
+    const isDirty = Object.keys(pending[s.id] || {}).length > 0;
+    const t = el('<div class="tab ' + (s.id === scope ? 'on ' : '') + (isDirty ? 'dirty' : '') + '" title="' + (isG ? '' : s.path) + '">'
+      + '<span class="lbl">' + short + '</span>'
+      + '<span class="pill">' + s.activeCount + '</span>'
+      + (isG ? '' : '<span class="x" title="stop tracking this folder">&times;</span>') + '</div>');
     t.onclick = (e) => {
       if (e.target.classList.contains('x')) { e.stopPropagation(); return removeScope(s.path); }
-      scope = s.id; render();
+      scope = s.id; openWhy = null; render(); refreshDiff();
     };
     sc.appendChild(t);
   });
+}
 
+function renderChain(rec, p) {
+  const wrap = el('<div class="chain"></div>');
+  const add = (title, res) => {
+    if (!res) return;
+    wrap.appendChild(el('<h4>' + title + '</h4>'));
+    const winner = res.chain.filter((c) => c.says !== null && c.says !== undefined).pop();
+    res.chain.forEach((c) => {
+      const has = c.says !== null && c.says !== undefined;
+      const cls = c.error ? 'bad' : (c === winner ? 'wins' : (has ? '' : 'none'));
+      const val = c.error ? 'ERR' : (has ? String(c.says) : '—');
+      const hop = el('<div class="hop ' + cls + '"><span class="kind"></span><span class="val"></span><span class="fp"></span></div>');
+      hop.querySelector('.kind').textContent = c.kind + (c.volatile ? '*' : '');
+      hop.querySelector('.val').textContent = val;
+      hop.querySelector('.fp').textContent = c.error ? c.error : c.file;
+      wrap.appendChild(hop);
+    });
+    wrap.appendChild(el('<div class="hop wins"><span class="kind">EFFECTIVE</span><span class="val">'
+      + String(res.value) + '</span><span class="fp">from ' + res.source + '</span></div>'));
+  };
+  add('ENABLED, in precedence order', rec.enabled);
+  if (p.levels) add('LEVEL' + (p.walksUp ? ', ancestors included' : ''), rec.level);
+  return wrap;
+}
+
+function renderStrips() {
   const box = document.getElementById('strips');
   box.innerHTML = '';
   const s = cur();
 
-  S.personas.forEach(p => {
+  S.personas.forEach((p) => {
     const st = s.personas[p.id];
     const pd = pend(p.id);
-    const on = pd.enabled !== undefined ? pd.enabled : st.enabled;
+    const on = pd.enabled !== undefined ? pd.enabled : (st.enabled && st.enabled.value);
     const lvl = pd.level || (st.level && st.level.value);
-    const unsupported = !st.supported;
-    const missing = !st.installed;
+    const dead = !st.supported || !st.installed;
+    const touched = pd.enabled !== undefined || pd.level || pd.env !== undefined;
 
-    const strip = el(`<div class="strip ${(unsupported||missing)?'dead':''}">
-      <div class="plate">
-        <div class="led ${pd.enabled!==undefined||pd.level||pd.env!==undefined?'pending':(on?'on':'')}"></div>
-        <div class="name">${p.label}</div>
-      </div>
-      <div class="blurb">${p.blurb}</div>
-      <div class="row">
-        <div class="sw ${on?'on':''}" data-sw></div>
-        <div class="state ${on?'on':''}">${on?'ACTIVE':'BYPASS'}</div>
-      </div>
-      <div class="levels" data-lv></div>
-      <div data-env></div>
-      <div class="note"></div>
-    </div>`);
+    const strip = el('<div class="strip ' + (dead ? 'dead' : '') + '">'
+      + '<div class="plate"><div class="led ' + (touched ? 'pending' : (on ? 'on' : '')) + '"></div>'
+      + '<div class="name">' + p.label + '</div>'
+      + '<div class="why">WHY</div></div>'
+      + '<div class="blurb">' + p.blurb + '</div>'
+      + '<div class="row"><div class="sw ' + (on ? 'on' : '') + '" data-sw></div>'
+      + '<div class="state ' + (on ? 'on' : '') + '">' + (on ? 'ACTIVE' : 'BYPASS') + '</div>'
+      + '<div class="src">' + (st.enabled ? st.enabled.source : '') + '</div></div>'
+      + '<div class="levels" data-lv></div><div data-env></div><div class="note"></div>'
+      + '<div data-chain></div></div>');
 
     const sw = strip.querySelector('[data-sw]');
-    if (!unsupported && !missing) sw.onclick = () => setPend(p.id, { enabled: !on });
+    if (!dead) sw.onclick = () => setPend(p.id, { enabled: !on });
+
+    const whyBtn = strip.querySelector('.why');
+    if (openWhy === p.id) whyBtn.classList.add('open');
+    whyBtn.onclick = () => { openWhy = openWhy === p.id ? null : p.id; render(); };
+    if (openWhy === p.id) strip.querySelector('[data-chain]').appendChild(renderChain(st, p));
 
     const lvbox = strip.querySelector('[data-lv]');
     if (p.levels) {
-      p.levels.forEach(L => {
-        const canLevel = st.levelScoped && !unsupported && !missing;
-        const b = el(`<div class="lv ${lvl===L?'on':''} ${canLevel?'':'dis'}">${L.toUpperCase()}</div>`);
+      p.levels.forEach((L) => {
+        const canLevel = st.levelScoped && !dead;
+        const b = el('<div class="lv ' + (lvl === L ? 'on' : '') + ' ' + (canLevel ? '' : 'dis') + '">' + L.toUpperCase() + '</div>');
         if (canLevel) b.onclick = () => setPend(p.id, { level: L });
         lvbox.appendChild(b);
       });
     }
 
-    // env-var control (ponytail subagent matcher). Global scope only.
-    if (p.envPresets && s.id === 'global' && !missing) {
-      const cur = pd.env !== undefined ? pd.env : st.env;
-      const box = strip.querySelector('[data-env]');
-      box.innerHTML = `<div class="envlbl">${p.envLabel}</div>`;
+    if (p.envPresets && s.id === 'global' && !dead) {
+      const cur2 = pd.env !== undefined ? pd.env : st.env;
+      const eb = strip.querySelector('[data-env]');
+      eb.appendChild(el('<div class="envlbl">' + p.envLabel + '</div>'));
       const row = el('<div class="levels"></div>');
-      p.envPresets.forEach(pr => {
-        const on = (cur || null) === pr.value;
-        const b = el(`<div class="lv ${on ? 'on' : ''}" title="${pr.hint}">${pr.label}</div>`);
+      p.envPresets.forEach((pr) => {
+        const b = el('<div class="lv ' + ((cur2 || null) === pr.value ? 'on' : '') + '" title="' + pr.hint + '">' + pr.label + '</div>');
         b.onclick = () => setPend(p.id, { env: pr.value });
         row.appendChild(b);
       });
-      box.appendChild(row);
-      const custom = el(`<input class="envin" placeholder="or a regex, e.g. ^(general|explore)$" value="${
-        cur && !p.envPresets.some(x => x.value === cur) ? cur : ''}">`);
+      eb.appendChild(row);
+      const custom = el('<input class="envin" placeholder="or a regex, e.g. ^(general|explore)$">');
+      custom.value = cur2 && !p.envPresets.some((x) => x.value === cur2) ? cur2 : '';
+      // change, not input: re-rendering on every keystroke would steal focus
       custom.onchange = () => setPend(p.id, { env: custom.value.trim() || null });
-      box.appendChild(custom);
+      eb.appendChild(custom);
     }
 
     const notes = [];
-    if (missing) notes.push('not installed');
-    if (unsupported) notes.push('global only');
-    if (st.inherited) notes.push('inherits global');
+    if (!st.installed) notes.push('not installed');
+    if (!st.supported) notes.push('global only');
     if (p.levels && !st.levelScoped) notes.push('level is global only');
-    if (st.level && st.level.from) notes.push('level from ' + st.level.from);
+    if (p.walksUp && s.path) notes.push('level can come from a parent folder');
+    if (st.drift) notes.push('<span class="warn">flag says ' + st.drift.live + ', config says '
+      + st.drift.resolved + '. SessionStart will overwrite the flag.</span>');
     if (p.id === 'headroom' && s.id === 'global') notes.push(st.proxy ? 'proxy up' : 'proxy down');
-    strip.querySelector('.note').textContent = notes.join(' · ');
+    if (p.cost) {
+      const bits = [];
+      if (p.cost.session) bits.push(p.cost.session + ' tok/session');
+      if (p.cost.perSubagent) bits.push(p.cost.perSubagent + ' tok/subagent');
+      if (bits.length) notes.push(bits.join(' · '));
+    }
+    strip.querySelector('.note').innerHTML = notes.join(' · ');
     box.appendChild(strip);
   });
+}
 
+function render() {
+  if (!S) return;
+  document.getElementById('dir').textContent = S.claudeDir;
+  renderScopes();
+  renderStrips();
   const ag = document.getElementById('agents');
   ag.innerHTML = '';
   Object.entries(S.agents).forEach(([n, v]) => {
-    ag.appendChild(el(`<div class="chip ${v.present&&v.wired?'ok':''}">${n.toUpperCase()} ${v.present?(v.wired?'WIRED':'DETECTED'):'ABSENT'}</div>`));
+    ag.appendChild(el('<div class="chip ' + (v.present && v.wired ? 'ok' : '') + '">'
+      + n.toUpperCase() + ' ' + (v.present ? (v.wired ? 'WIRED' : 'DETECTED') : 'ABSENT') + '</div>'));
   });
-
   document.getElementById('apply').disabled = !dirty();
+  document.getElementById('revert').disabled = !dirty();
 }
 
+/* ---------------- diff ---------------- */
+let diffTimer = null;
+function refreshDiff() {
+  clearTimeout(diffTimer);
+  diffTimer = setTimeout(async () => {
+    const node = document.getElementById('diff');
+    if (!dirty()) { node.style.display = 'none'; return; }
+    let p;
+    try {
+      p = await (await fetch('/api/plan', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ changes: pending }),
+      })).json();
+    } catch (e) { return; }
+    node.innerHTML = '';
+    node.style.display = 'block';
+    node.appendChild(el('<h3>PENDING &mdash; ' + p.files.length + ' file(s) will be written</h3>'));
+    (p.ops || []).filter((o) => o.level !== 'ok').forEach((o) => {
+      node.appendChild(el('<div class="fp" style="color:var(--amber);font-size:9px;margin-bottom:6px"></div>')).textContent = o.msg;
+    });
+    p.files.forEach((f) => {
+      const d = el('<div class="dfile"><div class="fp"></div><div class="dlines"></div></div>');
+      d.querySelector('.fp').textContent = (f.exists ? '' : 'NEW  ') + f.file;
+      const before = (f.before || '').split('\n');
+      const after = (f.after || '').split('\n');
+      const bset = new Set(before);
+      const aset = new Set(after);
+      const lines = d.querySelector('.dlines');
+      let shown = 0;
+      before.forEach((l) => {
+        if (!aset.has(l) && shown < 24) { const n = el('<div class="dl del"></div>'); n.textContent = '- ' + l.trim(); lines.appendChild(n); shown++; }
+      });
+      after.forEach((l) => {
+        if (!bset.has(l) && shown < 24) { const n = el('<div class="dl add"></div>'); n.textContent = '+ ' + l.trim(); lines.appendChild(n); shown++; }
+      });
+      if (!shown) lines.appendChild(el('<div class="dl">(no textual change)</div>'));
+      node.appendChild(d);
+    });
+  }, 120);
+}
+
+/* ---------------- actions ---------------- */
 document.getElementById('apply').onclick = async () => {
-  lcd('WRITING...');
-  const r = await (await fetch('/api/apply', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ changes: pending })
-  })).json();
-  pending = {};
-  S = r.state;
-  render();
-  lcd(r.log.join('\n'));
+  log('writing...', 'info');
+  try {
+    const r = await (await fetch('/api/apply', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ changes: pending }),
+    })).json();
+    (r.ops || []).forEach((o) => log(o.msg + (o.file ? '  → ' + o.file : ''), o.level));
+    if (r.backupStamp) log('backup ' + r.backupStamp, 'info');
+    if (r.state) S = r.state;
+    clearPending();
+  } catch (e) {
+    log('apply failed: ' + e, 'error');
+  }
 };
+
+document.getElementById('revert').onclick = () => { clearPending(); log('pending changes discarded'); };
 
 async function setFolders(folders, msg) {
   const r = await (await fetch('/api/folders', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folders })
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ folders }),
   })).json();
-  await load();
   if (r.rejected && r.rejected.length) {
-    lcd('REJECTED: ' + r.rejected.join(', ') +
-        '\nA scope must be an ABSOLUTE path to a folder that exists.\ne.g. C:\\Users\\you\\Documents  not  Documents');
-  } else lcd(msg);
+    log('rejected: ' + r.rejected.join(', ') + ' — a scope must be an absolute path to an existing folder', 'error');
+  } else log(msg);
 }
 
 async function removeScope(p) {
   if (scope === p) scope = 'global';
   delete pending[p];
-  await setFolders(S.scopes.filter(x => x.path && x.path !== p).map(x => x.path),
-    'SCOPE REMOVED: ' + p + '\n(only removed from this panel, its .claude/settings.local.json is untouched)');
+  await setFolders(S.scopes.filter((x) => x.path && x.path !== p).map((x) => x.path),
+    'stopped tracking ' + p + ' (its settings files are untouched)');
 }
 
 const browse = document.getElementById('browsebtn');
 browse.onclick = async () => {
   const label = browse.textContent;
   browse.textContent = 'WAITING FOR DIALOG...';
-  lcd('Folder dialog is open. It may be behind this window.');
+  log('folder dialog is open, it may be behind this window', 'info');
   try {
     const r = await (await fetch('/api/pick', { method: 'POST' })).json();
-    if (r.cancelled) lcd('CANCELLED.');
-    else { await load(); lcd('SCOPE ADDED: ' + r.picked); }
-  } catch (e) {
-    lcd('PICKER FAILED: ' + e + '\nPaste the path into the field instead.');
-  }
+    log(r.cancelled ? 'cancelled' : 'now tracking ' + r.picked);
+  } catch (e) { log('picker failed: ' + e + ', paste a path instead', 'error'); }
   browse.textContent = label;
+};
+
+document.getElementById('discoverbtn').onclick = async () => {
+  const r = await (await fetch('/api/discover')).json();
+  const fresh = r.candidates.filter((c) => !c.tracked);
+  if (!fresh.length) return log('nothing new found in the folders Claude Code has opened');
+  log('found ' + fresh.length + ' known project folder(s):', 'info');
+  fresh.slice(0, 12).forEach((c) => log('  ' + (c.overrides ? '[overrides plugins] ' : '') + c.path));
+  const withOverrides = fresh.filter((c) => c.overrides).map((c) => c.path);
+  if (withOverrides.length) {
+    await setFolders(S.scopes.filter((x) => x.path).map((x) => x.path).concat(withOverrides),
+      'added ' + withOverrides.length + ' folder(s) that already override plugin settings');
+  } else {
+    log('none of them override plugin settings, so none were added automatically');
+  }
 };
 
 document.getElementById('newpath').onkeydown = async (e) => {
@@ -315,10 +500,11 @@ document.getElementById('newpath').onkeydown = async (e) => {
   const v = e.target.value.trim();
   if (!v) return;
   e.target.value = '';
-  await setFolders(S.scopes.filter(x => x.path).map(x => x.path).concat([v]), 'SCOPE ADDED: ' + v);
+  await setFolders(S.scopes.filter((x) => x.path).map((x) => x.path).concat([v]), 'now tracking ' + v);
 };
 
-load();
+log('patchbay ready');
+connect();
 </script>
 </body>
 </html>
