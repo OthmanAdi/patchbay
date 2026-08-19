@@ -1,7 +1,7 @@
 {
   "name": "patchbay",
-  "version": "0.1.0",
-  "description": "A studio rack for your coding agent's personality. Toggle caveman, ponytail, i-have-adhd and headroom per folder, see what is actually wired, apply in one click.",
+  "version": "0.2.0",
+  "description": "A studio rack for your coding agent personality. Live per-folder control of caveman, ponytail, i-have-adhd and headroom, with a precedence explainer and a diff before every write.",
   "bin": {
     "patchbay": "bin/patchbay.js"
   },
