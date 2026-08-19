@@ -39,8 +39,11 @@ function backup(file, stamp) {
   if (!fs.existsSync(file)) return null;
   const dir = path.join(BACKUP_DIR, stamp);
   fs.mkdirSync(dir, { recursive: true });
-  // Flatten the path so two files with the same basename cannot collide.
-  const safe = file.replace(/[\/:]+/g, '_').replace(/^_+/, '');
+  // Flatten the path so two files with the same basename cannot collide, and so
+  // the backup never recreates a directory tree inside the backup folder.
+  // Splitting on "anything not filename-safe" avoids escaping traps with the
+  // Windows separator.
+  const safe = file.split(/[^A-Za-z0-9._-]+/).filter(Boolean).join('_');
   const dest = path.join(dir, safe);
   fs.copyFileSync(file, dest);
   return dest;
