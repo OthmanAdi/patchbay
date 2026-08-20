@@ -158,6 +158,15 @@ body{
 .chip{font-size:9.5px;letter-spacing:.1em;padding:4px 9px;border-radius:3px;background:#25272b;
   border:1px solid #17191c;color:var(--faint)}
 .chip.ok{color:var(--led)}
+.sysbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:13px;padding-top:12px;
+  border-top:1px solid var(--line);box-shadow:0 -1px 0 rgba(255,255,255,.05)}
+.syslbl{font-size:8.5px;letter-spacing:.16em;color:var(--faint)}
+.sysitem{display:flex;align-items:center;gap:8px;font-size:9.5px;letter-spacing:.1em;color:var(--dim)}
+.sysitem.on{color:var(--led)}
+.sw.sm{width:34px;height:18px;border-radius:10px}
+.sw.sm i{width:13px;height:13px;top:2px;left:2px}
+.sw.sm.on i{left:18px}
+.sysnote{font-size:9px;color:var(--faint);letter-spacing:.04em}
 input.path{flex:1;min-width:200px;padding:7px 10px;border-radius:5px;border:1px solid #17191c;
   background:#1b1d20;color:var(--ink);font:inherit;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.5) inset}
 </style>
@@ -188,6 +197,17 @@ input.path{flex:1;min-width:200px;padding:7px 10px;border-radius:5px;border:1px 
     </div>
 
     <div class="agents" id="agents"></div>
+
+    <div class="sysbar" id="sysbar">
+      <span class="syslbl">SYSTEM</span>
+      <div class="sysitem">
+        <div class="sw sm" id="autosw"><i></i></div>
+        <span id="autotxt">START ON LOGIN</span>
+      </div>
+      <div class="tab add" id="openapp">&#9744; OPEN AS APP</div>
+      <span class="sysnote" id="sysnote"></span>
+    </div>
+
     <div class="scopes" style="margin:13px 0 0">
       <div class="tab add" id="browsebtn">&#43; BROWSE FOLDER</div>
       <div class="tab add" id="discoverbtn">&#9678; DISCOVER</div>
@@ -503,8 +523,52 @@ document.getElementById('newpath').onkeydown = async (e) => {
   await setFolders(S.scopes.filter((x) => x.path).map((x) => x.path).concat([v]), 'now tracking ' + v);
 };
 
+/* ---------------- system bar ---------------- */
+// Autostart is strictly opt-in. Nothing here runs unless the user clicks.
+let desk = null;
+
+async function loadDesktop() {
+  try { desk = await (await fetch('/api/desktop')).json(); } catch (e) { return; }
+  renderDesktop();
+}
+
+function renderDesktop() {
+  if (!desk) return;
+  const on = !!(desk.autostart && desk.autostart.enabled);
+  const sw = document.getElementById('autosw');
+  sw.className = 'sw sm ' + (on ? 'on' : '');
+  document.getElementById('autotxt').parentNode.className = 'sysitem ' + (on ? 'on' : '');
+  document.getElementById('autotxt').textContent = on ? 'STARTS ON LOGIN' : 'START ON LOGIN';
+  const note = document.getElementById('sysnote');
+  if (!desk.autostart.supported) note.textContent = 'autostart is Windows-only for now';
+  else if (on) note.textContent = 'shortcut in your Startup folder, delete it any time';
+  else note.textContent = 'off. patchbay only runs when you start it';
+  const oa = document.getElementById('openapp');
+  oa.style.display = desk.browser ? '' : 'none';
+}
+
+document.getElementById('autosw').onclick = async () => {
+  const want = !(desk && desk.autostart && desk.autostart.enabled);
+  log(want ? 'enabling start on login...' : 'removing start on login...', 'info');
+  try {
+    const r = await (await fetch('/api/autostart', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: want }),
+    })).json();
+    desk.autostart = r.autostart;
+    renderDesktop();
+  } catch (e) { log('autostart failed: ' + e, 'error'); }
+};
+
+document.getElementById('openapp').onclick = async () => {
+  const r = await (await fetch('/api/openapp', { method: 'POST' })).json();
+  log(r.ok ? 'opened in its own window, you can close this tab' : 'could not open app window: ' + r.reason,
+    r.ok ? 'ok' : 'error');
+};
+
 log('patchbay ready');
 connect();
+loadDesktop();
 </script>
 </body>
 </html>

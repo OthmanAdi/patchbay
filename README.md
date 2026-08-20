@@ -18,6 +18,19 @@ npx github:OthmanAdi/patchbay
 
 Opens `http://127.0.0.1:41752`.
 
+```
+patchbay                 start and open in your browser
+patchbay app             start and open in its own window, no tabs, no address bar
+patchbay --no-open       start the server only
+patchbay autostart on    start on login (opt-in, per-user, no admin)
+patchbay autostart off   stop starting on login
+patchbay autostart       show whether it is enabled
+```
+
+Autostart is **off by default** and is never enabled as a side effect of anything else.
+It writes one shortcut to your own Startup folder, which you can see and delete in
+Explorer. There is no service, no scheduled task and no elevation.
+
 APPLY writes the files and the console reports each one.
 
 ![Applying changes to a folder scope](docs/apply.png)

@@ -12,10 +12,45 @@ const { plan, apply } = require('../src/apply');
 const { watchTargets } = require('../src/registry');
 const { ConfigWatcher, hashState } = require('../src/watch');
 const { CLAUDE_DIR } = require('../src/paths');
+const desktop = require('../src/desktop');
 
 const PUBLIC = path.join(__dirname, '..', 'public');
 const PORT = Number(process.env.PATCHBAY_PORT || 41752);
 const HEARTBEAT_MS = 25000; // below the usual 30s idle cut-off
+
+const ARGV = process.argv.slice(2);
+const WANT_APP = ARGV.includes('--app') || ARGV[0] === 'app';
+
+// --- subcommands that never start a server ---------------------------------
+if (ARGV[0] === 'autostart') {
+  const verb = ARGV[1] || 'status';
+  const report = (r) => {
+    const s = desktop.autostartStatus();
+    if (r && r.reason) console.error(`failed: ${r.reason}`);
+    console.log(`start on login: ${s.enabled ? 'ENABLED' : 'disabled'}`);
+    console.log(`shortcut      : ${s.link}`);
+    if (!s.enabled) console.log('enable with: patchbay autostart on');
+    process.exit(r && r.ok === false ? 1 : 0);
+  };
+  if (verb === 'on') desktop.enableAutostart(report);
+  else if (verb === 'off') desktop.disableAutostart(report);
+  else report(null);
+  return;
+}
+
+if (ARGV[0] === 'help' || ARGV.includes('--help') || ARGV.includes('-h')) {
+  console.log(`patchbay - persona control panel
+
+  patchbay                 start the server and open it in your browser
+  patchbay app             start the server and open it in its own window
+  patchbay --no-open       start the server only
+  patchbay autostart on    start on login (opt-in, per-user, no admin)
+  patchbay autostart off   stop starting on login
+  patchbay autostart       show whether it is enabled
+
+env: PATCHBAY_PORT (default 41752), CLAUDE_CONFIG_DIR`);
+  return;
+}
 
 const clients = new Set();
 const watcher = new ConfigWatcher();
@@ -66,7 +101,17 @@ async function refresh(reason, force = false) {
   }
 }
 
-watcher.on('change', (reasons) => refresh(`changed: ${reasons.map((r) => path.basename(r)).join(', ')}`));
+let lastToast = 0;
+watcher.on('change', (reasons) => {
+  const what = reasons.map((r) => path.basename(r)).join(', ');
+  refresh(`changed: ${what}`);
+  // One toast per 20s at most: a config edit can touch several files at once
+  // and nobody wants four notifications for one save.
+  if (Date.now() - lastToast > 20000) {
+    lastToast = Date.now();
+    desktop.toast('patchbay', `config changed on disk: ${what}`);
+  }
+});
 watcher.on('self', () => refresh('applied by patchbay', true));
 
 // --- proxy control ---------------------------------------------------------
@@ -169,6 +214,34 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { ...result, state: s });
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/desktop') {
+      return send(res, 200, {
+        autostart: desktop.autostartStatus(),
+        browser: desktop.findBrowser(),
+        port: PORT,
+      });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/autostart') {
+      const body = await readBody(req);
+      // Opt-in only. Nothing else in patchbay ever calls these.
+      const done = (r) => {
+        broadcast('log', {
+          level: r.ok ? 'ok' : 'error',
+          msg: r.ok
+            ? (body.enabled ? `start on login ENABLED -> ${r.link}` : 'start on login DISABLED')
+            : `could not change autostart: ${r.reason}`,
+        });
+        send(res, 200, { ...r, autostart: desktop.autostartStatus() });
+      };
+      return body.enabled ? desktop.enableAutostart(done) : desktop.disableAutostart(done);
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/openapp') {
+      const r = desktop.openAppWindow(`http://127.0.0.1:${PORT}`);
+      return send(res, 200, r);
+    }
+
     if (req.method === 'POST' && url.pathname === '/api/pick') {
       const picked = pickFolder();
       if (!picked) return send(res, 200, { cancelled: true });
@@ -228,11 +301,15 @@ server.listen(PORT, '127.0.0.1', async () => {
   console.log(`config   -> ${CLAUDE_DIR}`);
   console.log('ctrl+c to stop');
   await refresh('boot', true);
-  if (!process.argv.includes('--no-open')) {
-    const cmd = process.platform === 'win32' ? ['cmd', ['/c', 'start', '', url]]
-      : process.platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]];
-    try { spawn(cmd[0], cmd[1], { detached: true, stdio: 'ignore' }).unref(); } catch { /* open it yourself */ }
+  if (process.argv.includes('--no-open')) return;
+  if (WANT_APP) {
+    const r = desktop.openAppWindow(url);
+    if (r.ok) return;
+    console.log(`(app window unavailable: ${r.reason})`);
   }
+  const cmd = process.platform === 'win32' ? ['cmd', ['/c', 'start', '', url]]
+    : process.platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]];
+  try { spawn(cmd[0], cmd[1], { detached: true, stdio: 'ignore' }).unref(); } catch { /* open it yourself */ }
 });
 
 server.on('error', (e) => {
