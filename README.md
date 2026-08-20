@@ -109,6 +109,10 @@ still be dead in one repo.
 
 ## Development
 
+Start at [docs/HANDOFF.md](docs/HANDOFF.md): architecture, the invariants that must not be
+broken, the non-obvious truths about how each plugin resolves its own settings, and why
+this is deliberately not a Tauri or Electron app.
+
 ```bash
 npm test        # node --test, no framework
 npm start       # node bin/patchbay.js
